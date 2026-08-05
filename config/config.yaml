@@ -1,0 +1,173 @@
+project:
+  name: "Customer Churn Prediction"
+  version: "1.0.0"
+  description: "ML-based customer churn prediction with automated reporting and LLM insights"
+
+data:
+  # Sample: Kaggle Telco Customer Churn
+  source: "data/raw/churn_data.csv"
+  processed: "data/processed/churn_data_processed.csv"
+  test_size: 0.2
+  random_state: 42
+  
+  # Column names
+  target_column: "Churn"
+  
+  # Handle imbalanced data
+  use_smote: true
+  
+preprocessing:
+  handle_missing: "drop"  # drop, mean, median
+  scale_numerical: true
+  encode_categorical: "label"  # label, onehot
+  remove_outliers: true
+  outlier_threshold: 3  # standard deviations
+
+models:
+  # Models to train and compare
+  classifiers:
+    - name: "Logistic Regression"
+      type: "LogisticRegression"
+      params:
+        max_iter: 1000
+        random_state: 42
+        
+    - name: "Random Forest"
+      type: "RandomForestClassifier"
+      params:
+        n_estimators: 100
+        max_depth: 10
+        random_state: 42
+        n_jobs: -1
+        
+    - name: "XGBoost"
+      type: "XGBClassifier"
+      params:
+        n_estimators: 100
+        max_depth: 6
+        learning_rate: 0.1
+        random_state: 42
+        n_jobs: -1
+        
+    - name: "LightGBM"
+      type: "LGBMClassifier"
+      params:
+        n_estimators: 100
+        max_depth: 6
+        learning_rate: 0.1
+        random_state: 42
+        n_jobs: -1
+
+hyperparameter_tuning:
+  enabled: true
+  method: "optuna"  # optuna, grid, random
+  n_trials: 50
+  timeout: 600  # seconds
+  cv_folds: 5
+
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1"
+    - "roc_auc"
+  
+  # SHAP for explainability
+  use_shap: true
+  shap_sample_size: 100
+
+report_generation:
+  # Output formats
+  formats:
+    - "html"
+    - "pdf"
+  
+  output_dir: "reports"
+  
+  # Sections to include
+  sections:
+    - summary
+    - model_comparison
+    - feature_importance
+    - top_at_risk_customers
+    - detailed_analysis
+    - recommendations
+
+scheduling:
+  # APScheduler configuration
+  enabled: true
+  
+  # When to run pipeline
+  retrain:
+    trigger: "cron"
+    day_of_week: "mon"  # Monday
+    hour: 9
+    minute: 0
+  
+  inference:
+    trigger: "cron"
+    day_of_week: "0-6"  # Daily
+    hour: 8
+    minute: 0
+  
+  report:
+    trigger: "cron"
+    day_of_week: "1"  # Tuesday
+    hour: 10
+    minute: 0
+
+# Harness Engineering & LLM Configuration
+llm:
+  provider: "anthropic"
+  model: "claude-opus-4-6"
+  max_tokens: 2000
+  temperature: 0.7
+  
+  # Harness Engineering techniques
+  harness_engineering:
+    enabled: true
+    techniques:
+      - name: "chain_of_thought"
+        description: "Step-by-step reasoning for insights"
+        
+      - name: "self_consistency"
+        description: "Generate multiple interpretations and select best"
+        
+      - name: "react"
+        description: "Reason-Act-Observe cycle for analysis"
+      
+      - name: "memory_compaction"
+        description: "Compress key findings for context efficiency"
+  
+  # Insight generation prompts
+  prompts:
+    summary_insight: |
+      Analyze these churn metrics and provide 2-3 key business insights.
+      Focus on actionable recommendations.
+      
+    feature_analysis: |
+      Explain why these are the most important features for churn prediction.
+      What customer behaviors do they represent?
+      
+    risk_segment: |
+      Describe the profile of high-risk customers.
+      What interventions might prevent churn?
+
+database:
+  # Optional: for production use
+  enabled: false
+  type: "postgresql"  # sqlite, postgresql
+  connection_string: "postgresql://user:password@localhost/churn_db"
+  
+  # Or use SQLite for development
+  sqlite_path: "data/churn_data.db"
+
+logging:
+  level: "INFO"
+  log_file: "logs/pipeline.log"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+docker:
+  image: "customer-churn-prediction:latest"
+  port: 8501  # Streamlit default
